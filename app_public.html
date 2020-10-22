@@ -2,8 +2,7 @@
   <head>   
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <script>
-      const address = "0x2DB0B8F9ba4B93550675C44c3dcf6644654e830B";
-      
+      const address = "0x2DB0B8F9ba4B93550675C44c3dcf6644654e830B";      
 
       const web3 = new Web3(Web3.givenProvider);
 
@@ -76,44 +75,35 @@
         manager = await lottery.methods.manager().call();
         document.getElementById("manager").innerHTML = "Manager is " + manager;
       }      
-      const addPlayer = async () => {
-        const playerBalance = document.getElementById("playerBalance").value;
+      const addPlayer = async () => {        
+        const playerBalance = document.getElementById("playerBalance").value;        
         const accounts = await web3.eth.getAccounts();
-        playerBalance = web3.utils.toWei(playerBalance, "ether")
-        await lottery.methods
-          .enter()
-          .send({
-            from: accounts[0],
-            gas: 40000,
-            value: playerBalance,
-          });
+        document.getElementById("status").innerHTML = "Please wait....";    
+        await lottery.methods.enter().send({from: accounts[0],gas: 100000,value: web3.utils.toWei(playerBalance, "ether")}); 
+        document.getElementById("status").innerHTML = "You are in";         
         updatePrizePool();
-        countPlayer();
+        countPlayer();        
       };
-      const countPlayer = async () => {
+      const countPlayer = async () => {        
         const player = await lottery.methods.getPlayers().call();
         document.getElementById("playerCount").innerHTML =
           "There are " + player.length + " people entering the system";
       };
-      const updatePrizePool = async () => {
-        const balance = await lottery.method.getBalance().call();
-        balance = web3.utils.fromWei(balance, "ether");
-        document.getElementById("prizePool").innerHTML =
-          "the winner will get " + balance + " ether";
+      const updatePrizePool = async () => {           
+        const balance = web3.utils.fromWei(await web3.eth.getBalance(address), "ether");        
+        document.getElementById("prizePool").innerHTML = "the winner will get " + balance + " ether";
       };
       const pickWinner = async () => {
         const accounts = await web3.eth.getAccounts();
         if (accounts[0] != manager) {
-          document.getElementById("message").innerHTML =
-            "You are not the manager";
+          document.getElementById("status").innerHTML ="You are not the manager";
           return;
         } else {
-          await lottery.method
-            .pickWinner()
-            .send({ from: accounts[0], gas: 400000 });
-          winner = await lotteryContract.methods.winner().call();
-          document.getElementById("winner").innerHTML =
-            "the winner is" + winner;
+          document.getElementById("status").innerHTML ="Picking winner";
+          await lottery.methods.pickWinner().send({ from: manager,gas: 100000 });
+          document.getElementById("status").innerHTML ="Picking winner (cont.)";
+          winner = await lottery.methods.winner().call();
+          document.getElementById("status").innerHTML ="the winner is" + winner;
           updatePrizePool();
           countPlayer();
         }
@@ -122,12 +112,14 @@
   </head>
   <body>
     <script>
-      getManager();
+      getManager();      
+      countPlayer();
+      updatePrizePool();
     </script>
     <h2>Lottery Contract</h2>
     <div id="manager"></div>    
-    <div id="playerCount">There are 0 people entering the system</div>
-    <div id="prizePool">the winner will get 0 ether</div>
+    <div id="playerCount"></div>
+    <div id="prizePool"></div>
     <hr />
     <h4>Wanna Play?</h4>
     How much ether you want to enter (>=0.01 ether)<input
@@ -138,6 +130,7 @@
     <hr />
     <h4>Ready to pick winner?</h4>
     <button type="button" onclick="pickWinner()">Pick Winner</button>
-    <div id="winner"></div>
+    <hr />    
+    <div id="status"></div>
   </body>
 </html>
